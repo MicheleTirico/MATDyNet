@@ -1,7 +1,8 @@
 from setuptools import find_packages, setup
 setup(
     name='matdynet',
-    packages=find_packages(include=['matdynet']),		# NAME project here
+    packages=find_packages(
+        include=['matdynet', 'matdynet.scenario', 'matdynet.utils']),
     version='0.1.0',
     description='project',
     author='Me',
@@ -9,5 +10,5 @@ setup(
     install_requires=[],
     setup_requires=['pytest-runner'],
     tests_require=['pytest==4.4.1'],
-    test_suite='tests',
+    test_suite='test',
 )
