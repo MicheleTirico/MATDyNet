@@ -128,14 +128,15 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# directories
+# directories and files
 output*
 resources/
 scenarios/
 test/
 matsim-python/
 .tmp/
-
+test*
+cache
 # idea
 .idea/
 

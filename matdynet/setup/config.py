@@ -1,7 +1,4 @@
-
 import shutil
-import xml
-from xml.dom import minidom
 import xml.etree.ElementTree as ET
 import os
 
@@ -13,8 +10,8 @@ class Config:
     __tree = 0              # etree
     __root = 0              # etree
     __tags = []             # the list of all tags
-    __roots = []            # the list of roots
-    # roots = urls, simulation, iterations
+    __roots = []            # the list of roots = urls, simulation, iterations
+    __absolutePath = ""     # the root of the project
 
     #  constructor
     # ---------------------------------------------------------------------------------------
@@ -27,6 +24,11 @@ class Config:
         self.__iterations = self.__setDic("iterations")
         self.__setTags()
         self.__setRoots()
+
+
+    # set methods
+    # ---------------------------------------------------------------------------------------
+    def setAbsolutePath (self,absolutePath):    self.__absolutePath = absolutePath
 
     # private methods
     # ---------------------------------------------------------------------------------------
@@ -77,11 +79,11 @@ class Config:
 
     def getValsWithAttrib (self, root, tag, attrib_name, attrib_val):
         """
-        get the map of the values in a root with a tag and and an attribute
+        get the map of the values in a root with a tag and an attribute
         :param root:
         :param tag:
         :param attrib:
-        :return:
+        :return: a list of values with the attrib ok
         """
         l =[]
         root = self.__root.find(root)
@@ -90,8 +92,31 @@ class Config:
                 l.append(e.text)
         return l
 
+    def getValWith2Attrib (self, root, tag, attrib_name, attrib_val):
+        """
+        get the map of the values in a root with a tag and an attribute
+        :param root:
+        :param tag:
+        :param attrib:
+        :return: a list of values with the attrib ok
+        """
+        root = self.__root.find(root)
+        for e in root.iter(tag):
+              if e.get(attrib_name[0]) == attrib_val[0] and e.get(attrib_name[1]) == attrib_val[1]  :
+                return e.text
+
     def getNames(self,root):
         return list(self.getValsUrl().keys())
+
+    def getVal (self, root, tag, attrib_name, attrib_val):
+        # stop when find the first value of
+        root = self.__root.find(root)
+        for e in root.iter(tag):
+            if e.get(attrib_name) == attrib_val:
+                return e.text
+        print ("value not funded. Try",self.__config.getNames(root))
+
+    def getAbsolutePath (self):            return self.__absolutePath
 
 class Urls (Config):
     __config = 0
@@ -116,6 +141,7 @@ class Urls (Config):
                                self.getUrl("url_output")+"/"+self.getUrl("scenario")+'/sims',
                                self.getUrl("url_output")+"/"+self.getUrl("scenario")+'/sims/sim-0000',
                                ]
+
     def __setListUrlFromAndTo (self):
         self.__list_url_from = [self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("network"),
                                 self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("plans"),
@@ -133,8 +159,7 @@ class Urls (Config):
 
     # handle folders
 # ---------------------------------------------------------------------------------------
-    def getCompleteUrls(self):
-        return self.__completeUrls
+    def getCompleteUrls(self):  return self.__completeUrls
 
     def createFolders (self) :
         exit = 0
@@ -190,14 +215,31 @@ class Urls (Config):
             print ("exit 1. there are the name:",name," Try:",self.__config.getNames("urls"))
             return ""
 
+    def getUrlAbs(self,useAbs, name):
+        """
+        get the text from the name of the url. remove all spaces
+        :param name: get the name associated to the tag url
+        :return: the text of the url without spaces
+        """
+
+        try:
+            if useAbs:
+                return  self.__config.getAbsolutePath()+"/"+ self.__config.getValsUrl()[name].replace(" ","")
+            else:
+                return  self.__config.getValsUrl()[name].replace(" ","")
+        except:
+            print ("exit 1. there are the name:",name," Try:",self.__config.getNames("urls"))
+            return ""
+
 class Simulation (Config):
     __config = 0
+    __maxSimStep = 0
+
     def __init__(self, config ):
         self.__config = config
 
     def getMaxSim (self):
-        pass
-
+       return int(self.__config.getVal("simulation","parameter","name","numsim"))
 
 def test (run):
     if run:
@@ -208,5 +250,9 @@ def test (run):
         u.deleteExistingFilesAbs("/home/mtirico/project/matdynet/")
         u.createFoldersAbs("/home/mtirico/project/matdynet/")
         u.pushAllFilesAbs("/home/mtirico/project/matdynet/")
-        u.pushAllFiles()
+        u.pushAllFilesAbs("/home/mtirico/project/matdynet/")
+        s = Simulation(c)
+        print (s.getMaxSim())
+
+        u.getUrlAbs(True,"url_output")
 test(False)
