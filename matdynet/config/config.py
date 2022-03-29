@@ -25,6 +25,9 @@ class Config:
         self.__setTags()
         self.__setRoots()
 
+    def initConfig(self):
+        self.urlNetworkStates= self.getAbsolutePath()+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/"+self.getUrl("network_states")
+
 
     # set methods
     # ---------------------------------------------------------------------------------------
@@ -94,6 +97,7 @@ class Config:
 
     def getValWith2Attrib (self, root, tag, attrib_name, attrib_val):
         """
+        eg: config.getValWith2Attrib("urls","url",["name","type"],["network_shp","file"])
         get the map of the values in a root with a tag and an attribute
         :param root:
         :param tag:
@@ -117,6 +121,10 @@ class Config:
         print ("value not funded. Try",self.__config.getNames(root))
 
     def getAbsolutePath (self):            return self.__absolutePath
+
+    def getUrl (self,val): return self.getVal("urls","url","name",val).replace(" ","")
+    def getLearning(self,val):return self.getVal("learning","parameter","name",val).replace(" ","")
+    def getSim (self,val): return self.getVal("simulation","parameter","name",val).replace(" ","")
 
 class Urls (Config):
     __config = 0
@@ -143,17 +151,17 @@ class Urls (Config):
                                ]
 
     def __setListUrlFromAndTo (self):
-        self.__list_url_from = [self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("network"),
+        self.__list_url_from = [self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("networksim"),
                                 self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("plans"),
-                                self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("network"),
+                                self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("networksim"),
                                 self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("plans"),
                                 self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("config_iter")
                                 ]
-        self.__list_url_to= ["outputs/"+self.getUrl("scenario") +"/sims/sim-0000/network_0000.xml",
-                             "outputs/"+self.getUrl("scenario") +"/sims/sim-0000/plans_0000.xml",
-                             ".tmp/network_tmp.xml",
-                             ".tmp/plans_tmp.xml",
-                             ".tmp/config_tmp.xml"
+        self.__list_url_to= [self.getUrl("url_output")+"/"+self.getUrl("scenario") +"/sims/sim-0000/network_0000.xml",
+                             self.getUrl("url_output")+"/"+self.getUrl("scenario") +"/sims/sim-0000/plans_0000.xml",
+                             self.getUrl("tmp")+"/network_tmp.xml",
+                             self.getUrl("tmp")+"/plans_tmp.xml",
+                             self.getUrl("tmp")+"/config_tmp.xml"
                              ]
 
 
@@ -165,20 +173,18 @@ class Urls (Config):
         exit = 0
         for url in self.__completeUrls:
             try :os.mkdir(url)
-            except:
+            except FileExistsError:
                 exit = 1
                 print (url, "no set up output")
-                FileExistsError
         return exit
 
     def createFoldersAbs (self,absolutePath) :
         exit = 0
         for url in self.__completeUrls:
             try :os.mkdir(absolutePath+"/"+url)
-            except:
+            except FileExistsError:
                 exit = 1
                 print (url, "no set up output")
-                FileExistsError
         return exit
 
     def deleteExistingFiles(self):
@@ -197,8 +203,8 @@ class Urls (Config):
             shutil.copyfile(self.__list_url_from[i],self.__list_url_to[i])
 
     def pushAllFilesAbs (self,absolutePath):
-        list_from_abs = [absolutePath+a for a in self.__list_url_from]
-        list_to_abs = [absolutePath+a for a in self.__list_url_to]
+        list_from_abs = [absolutePath+"/"+a for a in self.__list_url_from]
+        list_to_abs = [absolutePath+"/"+a for a in self.__list_url_to]
         for i in range(0,len(self.__list_url_from)):#    print (i, list_from_abs[i],list_to_abs[i])
             shutil.copyfile(list_from_abs[i],list_to_abs[i])
 
@@ -238,13 +244,23 @@ class Simulation (Config):
     def __init__(self, config ):
         self.__config = config
 
-    def getMaxSim (self):
-       return int(self.__config.getVal("simulation","parameter","name","numsim"))
+    def getMaxSim (self):   return int(self.__config.getVal("simulation","parameter","name","numsim"))
+
+    def getParam (self, name):
+        """
+        get the text from the name of the url. remove all spaces
+        :param name: get the name associated to the tag url
+        :return: the text of the url without spaces
+        """
+        try:    return  self.__config.getValsSimulation()[name].replace(" ","")
+        except:
+            print ("exit 1. there are the name:",name," Try:",self.__config.getNames("urls"))
+            return ""
 
 def test (run):
     if run:
         url = "/home/mtirico/project/matdynet/resources/config_sim.xml"
-        c = Config(url);
+        c = Config(url)
     #    print ("tags:", c.getTags(),"\n","roots", c.getRoots(),"\n","url", c.getValsUrl(),"\n","simulation",c.getValsSimulation(),"\n","iterations",c.getValsIteration())#   print ("vals:", c.getValsOfRoot('url'))
         u=Urls(c)
         u.deleteExistingFilesAbs("/home/mtirico/project/matdynet/")
