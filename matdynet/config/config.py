@@ -24,20 +24,111 @@ class Config:
         self.__iterations = self.__setDic("iterations")
         self.__setTags()
         self.__setRoots()
+        self.initConfig()
+
+    def __init__(self, url_config,absolutePath):
+        self.setAbsolutePath(absolutePath)
+        self.__url_config_sim = url_config
+        self.__tree = ET.parse(url_config)
+        self.__root = self.__tree.getroot()
+        self.__urls = self.__setDic("urls")
+        self.__simulation = self.__setDic("simulation")
+        self.__iterations = self.__setDic("iterations")
+        self.__setTags()
+        self.__setRoots()
+        self.initConfig()
 
     def initConfig(self):
-        self.urlNetworkStates= self.getAbsolutePath()+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/"+self.getUrl("network_states")
 
 
-    # set methods
-    # ---------------------------------------------------------------------------------------
+
+        """
+        # url scenarios
+        self.urlNetwork             =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/"+self.getUrl("networksim")
+        self.urlNetwork             =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/"+self.getUrl("network_states")
+        self.urlPlans               =self.__absolutePath+"/"+self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("plans")
+        self.urlStates              =self.__absolutePath+"/"+self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("states")
+        self.urlConfig              =self.__absolutePath+"/"+self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("config_iter")
+
+        # urls sim 0000
+        self.urlNetwork_0000        =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/sim-0000/"+self.getUrl("networksim")
+        self.urlNetworkStates_0000  =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/sim-0000/"+self.getUrl("network_states")
+        self.urlPlans_0000          =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/sim-0000/"+self.getUrl("plans")
+        self.urlStates_0000         =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/sim-0000/"+self.getUrl("states")
+        self.urlConfig_0000         =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/sim-0000/"+self.getUrl("config_iter")
+
+        # url tmp
+        self.urlNetworkTmp          =self.__absolutePath+"/"+self.getUrl("tmp")+"/network_tmp.xml"
+        self.urlPlansTmp            =self.__absolutePath+"/"+self.getUrl("tmp")+"/plans_tmp.xml"
+        self.urlConfigTmp           =self.__absolutePath+"/"+self.getUrl("tmp")+"/config_tmp.xml"
+
+        """
+    # ok
+        # urls dir
+        self.urlOutput          =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")
+        self.urlOutputIter      =self.__absolutePath+"/"+self.getUrl("tmp")+"/output/"
+
+        # parameters
+        self.headerNetworkXml="""<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE network SYSTEM "http://www.matsim.org/files/dtd/network_v2.dtd">\n\n"""
+        self.nSimMax= int(self.getVal("simulation","parameter","name","numsim"))
+        self.randomSeed=self.__getRandomSeed()
+
+        # url in scenario
+        root=self.__absolutePath+"/"+self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")
+        self.urlConfig          =root+"/"+self.getUrl("config_iter")
+        self.urlConfigSim       =root+"/"+self.getUrl("configsim")
+        self.urlNetwork         =root+"/"+self.getUrl("network")
+        self.urlPlans           =root+"/"+self.getUrl("plans")
+        self.urlStates          =root+"/"+self.getUrl("states")
+        self.urlJar             =root+"/"+self.getUrl("jar")
+        self.urlShp             ='TODO'
+        self.urlOutputPlans     =root+"/"+self.getUrl("output_plans")
+
+        # url tmp
+        root= self.__absolutePath+"/"+self.getUrl("tmp")
+        self.urlNetworkTmp              =root+"/network_tmp.xml"
+        self.urlPlansTmp                =root+"/plans_tmp.xml"
+        self.urlConfigTmp               =root+"/config_tmp.xml"
+
+        # url output root
+        root=self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")
+        self.urlConfigSimOut            =root+"/"+self.getUrl("configsim")
+        self.urlConfigOut               =root+"/"+self.getUrl("network")
+        self.urlStateOut                =root+"/"+self.getUrl("states")
+        self.urlJarOut                  =root+"/"+self.getUrl("jar")
+        self.urlNetworkStatesOut        =root+"/"+self.getUrl("network_states") # to use when you save at the end
+        self.urlShpOut                 ="TODO"
+        self.urlPersonsOut              =root+"/"+self.getUrl("persons")
+
+    def __getRandomSeed(self):
+        try:    return int(self.getVal("learning","parameter","name","randomseed"))
+        except TypeError: pass
+
+    def initConfigStep(self,step):
+        root= self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/"+self.getNameSim(step)+"/"
+        # url output sim
+        self.urlConfigOut              =root+self.getUrl("config")
+        self.urlNetworkOut             =root+self.getUrl("network")
+        self.urlPlansOut               =root+self.getUrl("plans")
+        self.urlOutputPlansOut         =root+self.getUrl("output_plans")
+
+        # url dir
+        self.urlOutputSim              =root
+
+        # create folder to store sim
+        os.system("mkdir "+root)
+
+    def getNameSim (self, step):  return "sim-{:0>4}".format(step)
+
     def setAbsolutePath (self,absolutePath):    self.__absolutePath = absolutePath
-
-    # private methods
+    # set methods
     # ---------------------------------------------------------------------------------------
     def __setTags (self):
         for elem in self.__tree.iter():  self.__tags.append(elem.tag)
         self.__tags = list(set(self.__tags))
+
+    # private methods
+    # ---------------------------------------------------------------------------------------
 
     def __setDic ( self, tag ):
         dic = {}
@@ -51,13 +142,9 @@ class Config:
     # get methods
     # ---------------------------------------------------------------------------------------
     def getRoots (self): return self.__roots
-
     def getValsUrl(self) : return self.__urls
-
     def getValsSimulation(self) : return self.__simulation
-
     def getValsIteration(self) : return self.__iterations
-
     def getValsOfRoot (self, root ):
         """
         The method is used to get the dictionary from a root tag
@@ -73,13 +160,11 @@ class Config:
             print (root, "is not a tag in config")
             print ("try a tag in the list:", self.getRoots())
             return 1
-
     def getTags (self ) :
         """
         :return: all tags in the xml
         """
         return self.__tags
-
     def getValsWithAttrib (self, root, tag, attrib_name, attrib_val):
         """
         get the map of the values in a root with a tag and an attribute
@@ -94,7 +179,6 @@ class Config:
             if e.get(attrib_name) == attrib_val:
                 l.append(e.text)
         return l
-
     def getValWith2Attrib (self, root, tag, attrib_name, attrib_val):
         """
         eg: config.getValWith2Attrib("urls","url",["name","type"],["network_shp","file"])
@@ -108,23 +192,19 @@ class Config:
         for e in root.iter(tag):
               if e.get(attrib_name[0]) == attrib_val[0] and e.get(attrib_name[1]) == attrib_val[1]  :
                 return e.text
-
-    def getNames(self,root):
-        return list(self.getValsUrl().keys())
-
+    def getNames(self,root):    return list(self.getValsUrl().keys())
     def getVal (self, root, tag, attrib_name, attrib_val):
         # stop when find the first value of
         root = self.__root.find(root)
         for e in root.iter(tag):
             if e.get(attrib_name) == attrib_val:
                 return e.text
-        print ("value not funded. Try",self.__config.getNames(root))
+        print ("value not funded. Try",self.getNames(root))
 
     def getAbsolutePath (self):            return self.__absolutePath
-
     def getUrl (self,val): return self.getVal("urls","url","name",val).replace(" ","")
     def getLearning(self,val):return self.getVal("learning","parameter","name",val).replace(" ","")
-    def getSim (self,val): return self.getVal("simulation","parameter","name",val).replace(" ","")
+    def getSimulation (self,val): return self.getVal("simulation","parameter","name",val).replace(" ","")
 
 class Urls (Config):
     __config = 0
@@ -147,19 +227,21 @@ class Urls (Config):
                                self.getUrl("url_output"),
                                self.getUrl("url_output")+"/"+self.getUrl("scenario"),
                                self.getUrl("url_output")+"/"+self.getUrl("scenario")+'/sims',
-                               self.getUrl("url_output")+"/"+self.getUrl("scenario")+'/sims/sim-0000',
+                  #             self.getUrl("url_output")+"/"+self.getUrl("scenario")+'/sims/sim-0000',
                                ]
 
     def __setListUrlFromAndTo (self):
-        self.__list_url_from = [self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("networksim"),
-                                self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("plans"),
-                                self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("networksim"),
+        self.__list_url_from = [
+            #self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("networksim"),
+             #                   self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("plans"),
+        #                        self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("networksim"),
                                 self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("plans"),
                                 self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("config_iter")
                                 ]
-        self.__list_url_to= [self.getUrl("url_output")+"/"+self.getUrl("scenario") +"/sims/sim-0000/network_0000.xml",
-                             self.getUrl("url_output")+"/"+self.getUrl("scenario") +"/sims/sim-0000/plans_0000.xml",
-                             self.getUrl("tmp")+"/network_tmp.xml",
+        self.__list_url_to= [
+            #self.getUrl("url_output")+"/"+self.getUrl("scenario") +"/sims/sim-0000/network_sim-0000.xml",
+             #                self.getUrl("url_output")+"/"+self.getUrl("scenario") +"/sims/sim-0000/plans_sim-0000.xml",
+        #                     self.getUrl("tmp")+"/network_tmp.xml",
                              self.getUrl("tmp")+"/plans_tmp.xml",
                              self.getUrl("tmp")+"/config_tmp.xml"
                              ]
@@ -195,6 +277,10 @@ class Urls (Config):
         for url in[absolutePath+"/"+self.getUrl("url_output"),absolutePath+"/"+self.getUrl("tmp")] :
             os.system("rm -r "+url)
 
+    def deleteExistingOutputs (self):
+        com= "rm -r " +self.__config.urlOutput+"/"
+        os.system("rm -r " +self.__config.urlOutput+"/")
+        print (com)
 # push files
 # ---------------------------------------------------------------------------------------
 

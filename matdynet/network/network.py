@@ -3,6 +3,7 @@ import os
 
 from matdynet.config import config
 from matdynet.network.stateSet import StateSet
+import lxml.etree as ET
 
 
 class Network ():
@@ -22,10 +23,14 @@ class Network ():
         self.city = os.path.splitext(self.shp)[0]
         self.urlShp = self.config.getAbsolutePath()+"/scenarios/"+self.urls.getUrl("scenario")+"/"+self.urls.getUrl("network_shp")
         self.urlXml = self.config.getAbsolutePath()+"/scenarios/"+self.urls.getUrl("scenario")+"/"+self.urls.getUrl("network") # for the sim
-        self.urlXmlStates = self.config.getAbsolutePath()+"/"+self.urls.getUrl("url_output")+"/"+self.urls.getUrl("scenario")+"/"+self.urls.getUrl("network_states")
         self.urlNetwork=self.config.getAbsolutePath()+"/scenarios/"+self.urls.getUrl("scenario")+"/"+self.urls.getUrl("network")
         self.urlNetworkSim=self.config.getAbsolutePath()+"/"+self.urls.getUrl("url_output")+"/"+self.urls.getUrl("scenario")+"/"+self.urls.getUrl("networksim")
         self.urlNetworkToRemove=self.config.getAbsolutePath()+"/"+self.urls.getUrl("tmp")+"/netToRemove.xml"
+
+        # deprecated
+        self.urlXmlStates = self.config.getAbsolutePath()+"/"+self.urls.getUrl("url_output")+"/"+self.urls.getUrl("scenario")+"/"+self.urls.getUrl("network_states")
+
+        # init
         self.states = StateSet(self.config)
         self.__setupNetwork()
 
@@ -45,6 +50,20 @@ class Network ():
     def getGraphSim(self):       return self.G_sim
     def getGraphStates(self):       return self.G_states
 
+    # map states-network
+    # ---------------------------------------------------------------------------------------
+    def initMapLinks(self):
+        self.__mapLinks={}
+        tree_net=ET.parse(self.config.urlNetworkTmp)
+        root_net=tree_net.getroot()
+        links_net=root_net.findall("links")[0]
+        for link in links_net:
+            attributes=link.find("attributes")
+            id_link_states=attributes.findall("./attribute[@name='"+"id_link_states"+"']")[0].text
+            self.__mapLinks[int(link.attrib["id"])]=int(id_link_states)
+
+    def getMap(self):   return self.__mapLinks
+
 """
 network: classe generale
 network shp per gestire la transformazione in xml dei files shp
@@ -57,3 +76,4 @@ network sim: contiene metodi per generare il xml da poi usare nella simulazione
 
 
 """
+

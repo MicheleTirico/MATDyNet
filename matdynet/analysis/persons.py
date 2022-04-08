@@ -40,16 +40,11 @@ class Person():
         for i in self.__dictStepRoute[str(step)]:
             l+=str(i)+" "
         return l[:-1]
-
+"""
     def getAverageScore(self,step):
         a=0
-        print (self.__dictStepScore)
-#        for v in range(len(self.__dictStepScore)):            print (v)
         self.__averageScore = a/len(self.__dictStepScore)
         return self.__averageScore
+"""
 
-    """
-    id
-    list scores
-    map score:route
-    """
+

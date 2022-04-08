@@ -15,8 +15,7 @@ class EditNetwork (Network):
     def __init__(self,con):
         super(EditNetwork, self).__init__(con)
         self.__config=con
-        self.__initStates = self.__config.getSim("initStates")
-
+        self.__initStates = self.__config.getSimulation("initStates")
 
     # init networks sim and states
     # ---------------------------------------------------------------------------------------
@@ -38,9 +37,16 @@ class EditNetwork (Network):
         print ("LOG: create the network.xml file")
         self.__createXmlNetworkFromShp()
 
-    def addStateToXmlNetwork (self):
+    def editNetwork (self,step,urlNetworkStates,urlNetworkOut):
+        """
+        this method keep the networkStates and create a new networkSim. It store the existing nodes and create at least one link for each agent
+        :param step:
+        :param urlNetworkStates:
+        :param urlNetworkOut:
+        :return:
+        """
         print ("LOG: add state to the network.xml file")
-        self.__addStateToXmlNetwork()
+        self.__addStateToXmlNetwork(step,urlNetworkStates,urlNetworkOut)
 
     # create xml state networks
     # ---------------------------------------------------------------------------------------
@@ -77,6 +83,9 @@ class EditNetwork (Network):
                                                    "length":link.attrib["length"],
                                                    "width":str(w)
                                                    })
+            steps=ET.SubElement(l,"steps",{"name":"steps"})
+            s=ET.SubElement(steps,"step",{"nstep":str(0)})
+            ET.SubElement(s,"value",{"name":"state"}).text=self.__initStates
 
             self.__initSteps(link=l)
 
@@ -84,8 +93,8 @@ class EditNetwork (Network):
 
         # store network
         tree= ET.ElementTree (sim_tree)
-        tree.write(self.urlXmlStates, pretty_print = True)
-        tree.write(self.urlXmlStates,encoding="utf-8",xml_declaration=True,pretty_print = True)
+        tree.write(self.__config.urlNetworkStatesOut, pretty_print = True)
+        tree.write(self.__config.urlNetworkStatesOut,encoding="utf-8",xml_declaration=True,pretty_print = True)
 
     def __createXmlStatesFromShp(self):
         """
@@ -130,6 +139,7 @@ class EditNetwork (Network):
 
         # store network
         tree = ET.ElementTree(et_network)
+        # TODO:         self.__addHeaderAndStoreXml(root=network,toAdd=self.config.headerNetworkXml,newf=self.__config.urlNetwork_0000,pathTmp=self.urlNetworkToRemove)
         tree.write(self.__n.urlXmlStates, pretty_print = True)
         tree.write(self.__n.urlXmlStates,encoding="utf-8",xml_declaration=True,pretty_print = True)
 
@@ -183,37 +193,66 @@ class EditNetwork (Network):
         tree.write(self.__n.urlNetwork, pretty_print = True)
         tree.write(self.__n.urlNetwork,encoding="utf-8",xml_declaration=True,pretty_print = True)
 
-    def __addStateToXmlNetwork(self):
+    def __addStateToXmlNetwork(self,step,urlNetworkStates,urlNetworkOut):
         # init the xml file
         network = ET.Element("network",{"name":str(self.scenario)})
         self.__setAttribute(network,"state",self.__initStates)
         self.__setAttribute(network,"scenario",self.scenario)
         self.__setAttribute(network,"datafrom","xml")
+        self.__setAttribute(network,"step",str(step))
         sim_nodes=ET.SubElement(network,"nodes")
         sim_links=ET.SubElement(network,"links")
+
         # open the file networkStates.xml
-        states_tree = ET.parse(self.urlXmlStates)
+        states_tree = ET.parse(urlNetworkStates)
         states_root=states_tree.getroot()
         # create nodes
         for node in states_root[0]:  ET.SubElement(sim_nodes,"node",attrib=node.attrib)
         # create links
-        for link in states_root[1]:
+        sim_id_link=1
+        links=states_root.findall("./links")[0]
+        for link in links: #states_root[1]:
+            if step==0:
+                state=link.attrib["state"]
+            else:
+                stepsTag = link.find("steps")
+                stepTag=stepsTag.findall("./step[@nstep='"+str(step)+"']")[0]
+                state=stepTag.findall("./value[@name='state']")[0].text
+
+            s=self.states.getState(state)
+            for line in s.getLines():
+                sim_link=ET.SubElement(sim_links,"link",attrib={"id":str(sim_id_link),#link.attrib["id"],
+                                                                "from":link.attrib["from"],
+                                                                "to": link.attrib["to"],
+                                                                "capacity":line["capacity"],
+                                                                "freespeed":line["freespeed"],
+                                                                "permlanes":line["permlanes"],
+                                                                "length":link.attrib["length"]})
+
+                self.__setAttribute(sim_link,"state",state)
+                self.__setAttribute(sim_link,"width",link.attrib["width"])
+                self.__setAttribute(sim_link,"id_link_states",link.attrib["id"])
+                sim_id_link+=1
+
+        self.__addHeaderAndStoreXml(root=network,toAdd=self.config.headerNetworkXml,newf=urlNetworkOut,pathTmp=self.urlNetworkToRemove)
+
+    def __addlinkFromStates (self,state_links,sim_links):
+        sim_id_link=1
+        for link in state_links:
             s=self.states.getState(link.attrib["state"])
-            lines=s.getLines()
-            line=lines[0]
-            sim_link=ET.SubElement(sim_links,"link",attrib={"id":link.attrib["id"],
-                                                     "from":link.attrib["from"],
-                                                     "to": link.attrib["to"],
-                                                     "capacity":line["capacity"],
-                                                     "freespeed":line["freespeed"],
-                                                     "permlanes":line["permlanes"],
-                                                     "length":link.attrib["length"]})
+            for line in s.getLines():
+                sim_link=ET.SubElement(sim_links,"link",attrib={"id":str(sim_id_link),#link.attrib["id"],
+                                                                "from":link.attrib["from"],
+                                                                "to": link.attrib["to"],
+                                                                "capacity":line["capacity"],
+                                                                "freespeed":line["freespeed"],
+                                                                "permlanes":line["permlanes"],
+                                                                "length":link.attrib["length"]})
 
-            self.__setAttribute(sim_link,"state",self.__initStates)
-            self.__setAttribute(sim_link,"width",link.attrib["width"])
-
-        toAdd = """<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE network SYSTEM "http://www.matsim.org/files/dtd/network_v2.dtd">\n\n"""
-        self.__addHeaderAndStoreXml(root=network,toAdd=toAdd,newf=self.urlNetworkSim,pathTmp=self.urlNetworkToRemove)
+                self.__setAttribute(sim_link,"state",self.__initStates)
+                self.__setAttribute(sim_link,"width",link.attrib["width"])
+                self.__setAttribute(sim_link,"id_link_states",link.attrib["id"])
+                sim_id_link+=1
 
     def __addHeaderAndStoreXml (self,root, toAdd,newf,pathTmp):
         tree= ET.ElementTree (root)
@@ -230,24 +269,31 @@ class EditNetwork (Network):
     def __setAttribute(self,root,name,val):
         try:                attributes=root[0]
         except IndexError:  attributes= ET.SubElement(root,"attributes",{})
-        attribute= ET.SubElement(attributes,"attribute",{"name":name,"class":"java.lang.String"})
+        try:                attribute=attributes.findall("./attribute[@name='"+name+"']")[0]
+        except:             attribute= ET.SubElement(attributes,"attribute",{"name":name,"class":"java.lang.String"})
         attribute.text=val
 
-    # ---------------------------------------------------------------------------------------
-    def __getListAllowedStates (self,link):
-        return ""
+    def writeXml(self,step):
+        # prendo network states e creo un nuovo xml network.
+        # networkStates.xml     -> prendo stati
+        # scrivo nuovo network_tmp.xml
+
+        tree_networkStates=ET.parse(self.__config.urlNetworkStatesOut)
+        root_networkStates=tree_networkStates.getroot()
+        links_networkStates=root_networkStates.find("links")
+        tree_networkTmp=ET.parse(self.__config.urlNetworkTmp)
+        root_networkTmp=tree_networkTmp.getroot()
+        self.__setAttribute(root_networkTmp,"step",str(step))
+        links_networkTmp=root_networkTmp.find("links")
+        for link in links_networkTmp:            links_networkTmp.remove(link)
+        self.__addlinkFromStates(state_links=links_networkStates,sim_links=links_networkTmp)
+        tree_networkTmp.write(self.__config.urlNetworkTmp,pretty_print=True)
+
+#    def __getListAllowedStates (self,link): return ""
 
     # update network states
-    """ create a temporal graph
-      <step name="it.number it">
-          <value name="score"> xxxx </value>       
-      </step>
-    """
     # ---------------------------------------------------------------------------------------
-
-    def __initSteps (self,link):
-        steps = ET.SubElement(link,"steps",{"name":"steps"})
-    #    step = ET.SubElement(steps,"step",{})
+    def __initSteps (self,link):        steps = ET.SubElement(link,"steps",{"name":"steps"})
 
     def __setStepVal(self,root,nStep,nameVal,val):
         try:    step=root[0]
@@ -255,12 +301,29 @@ class EditNetwork (Network):
         value = ET.SubElement(step,"value",{"name":nameVal})
         value.text=val
 
-    def updateStateNetwork(self,nStep):
+    def updateStateNetwork(self,step):
+        #TODO: cancello il vecchio network.xml in tmp e faccio uno nuovo da zero. salvo solo i nodi, prendo i link da states e faccio uno nuovo
         # open the file networkStates.xml
-        states_tree = ET.parse(self.__n.urlXmlStates)
+    #    print(self.__config.urlNetworkStates)
+        states_tree = ET.parse(self.__config.urlNetworkStates)
         states_root=states_tree.getroot()
+        states_links=states_root[0]
 
-        for link in states_root[1]:
+        net_tree = ET.parse(self.__config.urlXmlNetwork)
+        net_root=net_tree.getroot()
+        net_links=net_root[2]
+        self.__setAttribute(net_root,"test","aa")
+
+        for link in states_links:
+            states_links_id=link.attrib["id"]
+            states_steps=link[0]
+            states_step=ET.SubElement(states_steps,"step",{"nstep":str(step)})[0]
+            states_state=ET.SubElement(states_step,"value",{"name":"state"})[0].text
+
+
+    """     
+
+    for link in states_root[1]:
             name= "name analysis"
             val= str(random.randrange(0,100)) # value of analysis
             newState="state"
@@ -268,7 +331,8 @@ class EditNetwork (Network):
             self.__setStepVal(root=link[0],nStep=nStep,nameVal="state",val=newState)
 
         tree= ET.ElementTree (states_root)
-        tree.write(self.__n.urlXmlStates)
+        tree.write(self.__config.urlXmlStates)
+    """
 
     # handle and get informations about shapefile
     # ---------------------------------------------------------------------------------------

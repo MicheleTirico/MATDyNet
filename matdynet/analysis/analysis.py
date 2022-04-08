@@ -12,8 +12,8 @@ class Analysis:
         self.__typeAnalysis = self.__config.getValsSimulation()["nameAnalysis"]
         self.__G=self.__network.G_sim
         self.__persons = Persons(self.__config.getUrl("scenario"))
-        self.__urlPersons=self.__config.getAbsolutePath()+"/"+self.__config.getUrl("url_output")+"/"+self.__config.getUrl("scenario")+"/"+self.__config.getUrl("persons")
-        self.__urlInputPlans=self.__config.getAbsolutePath()+"/scenarios/"+self.__config.getUrl('scenario')+"/"+self.__config.getUrl("plans")
+    #    self.__urlPersons=self.__config.getAbsolutePath()+"/"+self.__config.getUrl("url_output")+"/"+self.__config.getUrl("scenario")+"/"+self.__config.getUrl("persons")
+    #    self.__urlInputPlans=self.__config.getAbsolutePath()+"/scenarios/"+self.__config.getUrl('scenario')+"/"+self.__config.getUrl("plans")
         self.__urlNetworkStates=self.__config.getAbsolutePath()+"/"+self.__config.getUrl("url_output")+"/"+self.__config.getUrl("scenario")+"/"+self.__config.getUrl("network_states")
 
     def getPersons(self):   return self.__persons
@@ -23,21 +23,20 @@ class Analysis:
         return self.__urlPlans
 
     def compute(self,step):
-        if self.__typeAnalysis=="score":
-            self.__computeScore(step)
-        else: print ("ERROR: no type of analysis have bee set")
+        if self.__typeAnalysis=="score":    self.__computeScore(step)
+        else:                               print ("ERROR: no type of analysis have bee set")
 
     def initPersonsXml (self):
         root_out = ET.Element("persons",attrib={"scenario":self.__config.getUrl("scenario")})
         tree_out= ET.ElementTree (root_out)
-        tree_in = ET.parse(self.__urlInputPlans)
+        tree_in = ET.parse(self.__config.urlPlans)
         root_in = tree_in.getroot()
         for person_in in root_in:
             id = person_in.attrib["id"]
             ET.SubElement(root_out,"person",attrib={"id":id})
             p = Person(id)
             self.__persons.addPerson(p)
-        tree_out.write(self.__urlPersons,pretty_print = True)
+        tree_out.write(self.__config.urlPersonsOut,pretty_print = True)
 
     def initPersonsFromPlans (self):
         """
@@ -54,7 +53,7 @@ class Analysis:
             except KeyError: pass
 
     def writePersons(self,step):
-        tree = ET.parse(self.__urlPersons)
+        tree = ET.parse(self.__config.urlPersonsOut)
         root = tree.getroot()
         for person in root:
             id=person.attrib["id"]
@@ -67,9 +66,10 @@ class Analysis:
             ET.SubElement(s,"value",{"name":"averagescore"}).text=str(avSc)
             ET.SubElement(s,"value",{"name":"route"}).text=p.getRouteAsString(step)
 
-        tree.write(self.__urlPersons,pretty_print=True)
+        tree.write(self.__config.urlPersonsOut,pretty_print=True)
 
-    def updatePersons (self,step):
+    def updatePersons (self,step):      # this method update the class persons, not the persons.xml file
+    #    print (self.__getUrlOutputPlans())
         with gzip.open(self.__getUrlOutputPlans(), 'rb') as f:
             tree = ET.parse(f)
             for person in tree.getroot() :
@@ -99,7 +99,7 @@ class Analysis:
     def __computeScore(self,step):
         """
         compute for each agent the average score:
-        for each pensor:
+        for each pearson:
             score <- get score
             routeStr <- get route
             for each link in routeStr:
@@ -110,12 +110,12 @@ class Analysis:
         :param step:
         :return:
         """
-        tree_persons=ET.parse(self.__urlPersons)
+        tree_persons=ET.parse(self.__config.urlPersonsOut)
         root_persons=tree_persons.getroot()
-        tree_network=ET.parse(self.__urlNetworkStates)
+        tree_network=ET.parse(self.__config.urlNetworkStatesOut)
         root_network=tree_network.getroot()
-        links=root_network[1]
-        for person in root_persons:
+        links=root_network.findall("links")[0]#root_network[1]
+        for person in root_persons:#            print (person.attrib)
             steps=person[0]
             s = steps.find("step",{"nstep":str(step)})
             for value in s:
@@ -124,24 +124,45 @@ class Analysis:
                 if name=="averagescore":valueScore=float(value.text)
                 elif name=="route":     route=value.text.split(" ")
             for id_link in route:
-                link=links.findall("./link[@id='"+str(id_link)+"']")[0]
+                id_link_network=id_link
+                id_link_state=self.__network.getMap()[int(id_link)]
+                link=links.findall("./link[@id='"+str(id_link_state)+"']")[0]
                 steps_links=link[0]
-                s=steps_links.findall("./step[@nstep='"+str(step)+"']")
-                if (len(s)==0):
-                    s=ET.SubElement(steps_links,"step",{"nstep":str(step)})
-                    ET.SubElement(s,"value",{"name":"scoresum"}).text=str(valueScore)
-                    ET.SubElement(s,"value",{"name":"pathCount"}).text="1"
-                    ET.SubElement(s,"value",{"name":"averagescore"}).text=str(valueScore)
-                else:
-                    s=s[0]
-                    scoreTag=s.findall("./value[@name='scoresum']")[0]
-                    oldScoreVal=float(scoreTag.text)
-                    pathCountTag=s.findall("./value[@name='pathCount']")[0]
-                    oldPathCountVal=int(pathCountTag.text)
-                    scoreTag.text=str(oldScoreVal+valueScore)
-                    pathCountTag.text=str(oldPathCountVal+1)
 
-        tree_network.write(self.__urlNetworkStates,pretty_print=True)
+            #    s=steps_links.findall("./step[@nstep='"+str(step)+"']")
+                try:                    s=steps_links.findall("./step[@nstep='"+str(step)+"']")[0]
+                except IndexError:      s=ET.SubElement(steps_links,"step",{"nstep":str(step)})
+
+                try:                    scoreTag=s.findall("./value[@name='scoresum']")[0]
+                except IndexError:
+                    scoreTag=ET.SubElement(s,"value",{"name":"scoresum"})
+                    scoreTag.text=str(valueScore)
+
+                oldScoreVal=float(scoreTag.text)
+
+                try:                    pathCountTag=s.findall("./value[@name='pathCount']")[0]
+                except IndexError:
+                    pathCountTag=ET.SubElement(s,"value",{"name":"pathCount"})
+                    pathCountTag.text="1"
+                """
+                stepOldTag=steps_links.findall("./step[@nstep='"+str(step-1)+"']")[0]
+                stateOldVal=stepOldTag.findall("./value[@name='state']")[0].text
+                try:                    stateTag=s.findall("./value[@name='state']")[0]
+                except IndexError:
+                    stateTag=ET.SubElement(s,"value",{"name":"state"})
+                    stateTag.text=stateOldVal
+                """
+                oldPathCountVal=int(pathCountTag.text)
+                scoreSum=oldScoreVal+valueScore
+                scoreTag.text=str(scoreSum)
+                pathCountVal=oldPathCountVal+1
+                pathCountTag.text=str(pathCountVal)
+
+                try:                    scoreaverage=s.findall("./value[@name='scoreaverage']")[0]
+                except IndexError:
+                    scoreAv=ET.SubElement(s,"value",{"name":"scoreaverage"})
+                    scoreAv.text=str(scoreSum/pathCountVal)
+        tree_network.write(self.__config.urlNetworkStatesOut,pretty_print=True)
 
     def getTypeAnalysis(self):  return self.__typeAnalysis
 

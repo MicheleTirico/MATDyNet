@@ -33,6 +33,7 @@ class StateSet ():
                 else:
                     line = self.__getLine(attrib_line,element_state_xml)
                     state.setLine(line)
+        self.__listStates=list(self.__states.keys())
 
     # methods for lines
     def __getLine (self,attrib_list,element):
@@ -46,8 +47,13 @@ class StateSet ():
 
     # get methods
     # ---------------------------------------------------------------------------------------
-    def getStates(self):    return self.__states
+    def getStates(self):        return self.__states
     def getState(self,name):    return self.__states[name]
+
+    def getListStates(self):    return list(self.__states.keys())
+    def getPosState(self,state):
+        try:                    return(self.__listStates.index(state))
+        except ValueError:      print("ERROR: the state",state,"has ot been defined")
 
 class State:
     def __init__(self,name):
@@ -69,13 +75,13 @@ class State:
 
 def __test(run):
     if run :
-        url = "/home/mtirico/project/matdynet/scenarios/orsay/config_sim.xml"
+        url = "/home/mtirico/project/matdynet/scenarios/equil_02/config_sim.xml"
         absPath = "/home/mtirico/project/matdynet"
 
-        c = config.Config(url)
+        c = config.Config(url,absPath)
         c.setAbsolutePath(absPath)
 
-        n=Network(c)
-        ns = StateSet(c)
+        ss=StateSet(con=c)
+        ss.getState("c1")
 
-__test(False)
+__test(True)
