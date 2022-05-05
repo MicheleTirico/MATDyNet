@@ -217,10 +217,13 @@ class EditNetwork (Network):
             else:
                 stepsTag = link.find("steps")
                 stepTag=stepsTag.findall("./step[@nstep='"+str(step)+"']")[0]
+            #    print (urlNetworkStates,stepTag.attrib,stepTag.findall("./value[@name='state']"))
                 state=stepTag.findall("./value[@name='state']")[0].text
 
             s=self.states.getState(state)
+
             for line in s.getLines():
+
                 sim_link=ET.SubElement(sim_links,"link",attrib={"id":str(sim_id_link),#link.attrib["id"],
                                                                 "from":link.attrib["from"],
                                                                 "to": link.attrib["to"],
@@ -233,7 +236,6 @@ class EditNetwork (Network):
                 self.__setAttribute(sim_link,"width",link.attrib["width"])
                 self.__setAttribute(sim_link,"id_link_states",link.attrib["id"])
                 sim_id_link+=1
-
         self.__addHeaderAndStoreXml(root=network,toAdd=self.config.headerNetworkXml,newf=urlNetworkOut,pathTmp=self.urlNetworkToRemove)
 
     def __addlinkFromStates (self,state_links,sim_links):

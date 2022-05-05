@@ -24,7 +24,7 @@ class Analysis:
 
     def compute(self,step):
         if self.__typeAnalysis=="score":    self.__computeScore(step)
-        else:                               print ("ERROR: no type of analysis have bee set")
+        else:                               print ("ERROR: no type of analysis have been set")
 
     def initPersonsXml (self):
         root_out = ET.Element("persons",attrib={"scenario":self.__config.getUrl("scenario")})
@@ -69,7 +69,6 @@ class Analysis:
         tree.write(self.__config.urlPersonsOut,pretty_print=True)
 
     def updatePersons (self,step):      # this method update the class persons, not the persons.xml file
-    #    print (self.__getUrlOutputPlans())
         with gzip.open(self.__getUrlOutputPlans(), 'rb') as f:
             tree = ET.parse(f)
             for person in tree.getroot() :
@@ -114,7 +113,7 @@ class Analysis:
         root_persons=tree_persons.getroot()
         tree_network=ET.parse(self.__config.urlNetworkStatesOut)
         root_network=tree_network.getroot()
-        links=root_network.findall("links")[0]#root_network[1]
+        links_network=root_network.findall("links")[0]#root_network[1]
         for person in root_persons:#            print (person.attrib)
             steps=person[0]
             s = steps.find("step",{"nstep":str(step)})
@@ -124,22 +123,18 @@ class Analysis:
                 if name=="averagescore":valueScore=float(value.text)
                 elif name=="route":     route=value.text.split(" ")
             for id_link in route:
-                id_link_network=id_link
                 id_link_state=self.__network.getMap()[int(id_link)]
-                link=links.findall("./link[@id='"+str(id_link_state)+"']")[0]
+                link=links_network.findall("./link[@id='"+str(id_link_state)+"']")[0]
                 steps_links=link[0]
-
             #    s=steps_links.findall("./step[@nstep='"+str(step)+"']")
                 try:                    s=steps_links.findall("./step[@nstep='"+str(step)+"']")[0]
-                except IndexError:      s=ET.SubElement(steps_links,"step",{"nstep":str(step)})
-
+                except IndexError:
+                    s=ET.SubElement(steps_links,"step",{"nstep":str(step)})
                 try:                    scoreTag=s.findall("./value[@name='scoresum']")[0]
                 except IndexError:
                     scoreTag=ET.SubElement(s,"value",{"name":"scoresum"})
                     scoreTag.text=str(valueScore)
-
                 oldScoreVal=float(scoreTag.text)
-
                 try:                    pathCountTag=s.findall("./value[@name='pathCount']")[0]
                 except IndexError:
                     pathCountTag=ET.SubElement(s,"value",{"name":"pathCount"})

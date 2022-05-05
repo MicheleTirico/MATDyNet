@@ -4,8 +4,6 @@ from matdynet.network.editNetwork import EditNetwork
 from matdynet.config import config
 
 # setup parameters
-
-
 url = "/home/mtirico/project/matdynet/scenarios/equil_02/config_sim.xml"
 absPath = "/home/mtirico/project/matdynet"
 
@@ -13,9 +11,9 @@ absPath = "/home/mtirico/project/matdynet"
 c = config.Config(url,absPath)
 #c.setAbsolutePath(absPath)
 u = config.Urls(c)
-#u.deleteExistingFiles()
-#u.deleteExistingOutputs()
-#u.createFolders()
+u.deleteExistingFiles()
+u.deleteExistingOutputs()
+u.createFolders()
 
 # setup network
 n=Network(c)
@@ -25,16 +23,10 @@ nshp.processingShp()        # TODO, transformer initial shp to a new shp for the
 nshp.setupNetwork()         # download and store the shp if not founded
 """
 
-
 en=EditNetwork(c)
 # nsim.initNetworkStates()    # method to use when we have a shapefile<
 # c.initConfigStep(0)
 en.initNetworkStatesFromXml()    # method to use when we have an existing network.xml and we want to add states. We do not consider here the properties of the network
-#en.addStateToXmlNetwork()
-#en.createNetworkSim()
-
-
-#u.pushAllFilesAbs(absPath)
 
 ct = Controler (c,n,en)
 

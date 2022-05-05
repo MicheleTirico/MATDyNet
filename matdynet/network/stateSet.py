@@ -84,4 +84,4 @@ def __test(run):
         ss=StateSet(con=c)
         ss.getState("c1")
 
-__test(True)
+__test(False)

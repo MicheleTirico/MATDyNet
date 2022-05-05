@@ -61,8 +61,14 @@ class Network ():
             attributes=link.find("attributes")
             id_link_states=attributes.findall("./attribute[@name='"+"id_link_states"+"']")[0].text
             self.__mapLinks[int(link.attrib["id"])]=int(id_link_states)
-
+    #    print(self.__mapLinks)
+    #    quit()
     def getMap(self):   return self.__mapLinks
+
+    def updateMap(self,id_link):
+        self.__mapLinks[len(self.__mapLinks)+1]=id_link
+
+
 
 """
 network: classe generale
