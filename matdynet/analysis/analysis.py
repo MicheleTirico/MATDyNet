@@ -81,7 +81,8 @@ class Analysis:
                             mix =[]
                             for leg in plan.findall('leg'):
                                 route = leg.find("route")
-                                a=route.text.split(" ")
+                                try:                    a=route.text.split(" ")
+                                except AttributeError:  print("WARNING: no route for the agent",id)
                                 mix.append(a)
                             if len(mix)==0: links = mix
                             else:
