@@ -1,11 +1,8 @@
-import numpy as np
+import lxml.etree as ET
 import random as rd
-
 from matdynet.config import config
 from matdynet.learning.agents import Agents
 from matdynet.network.network import Network
-
-import lxml.etree as ET
 
 class Learning ():
     def __init__(self,config,network):
@@ -43,7 +40,7 @@ class Learning ():
             ET.SubElement(newStep,"value",{"name":"state"}).text=newState
         tree_networkStates.write(self.config.urlNetworkStatesOut, pretty_print = True)
 
-    def __computeQtable_old_01(self,step):
+    def __computeQtable (self,step):
         print("LOG: start compute qtable")
         """
         input: 
@@ -58,84 +55,25 @@ class Learning ():
             update qtab
         """
         for agent in self.__agents.getAgents().values():
-            id_link=agent.getId()
-            state=agent.getInitState()
-            posState=self.network.states.getPosState(state)
-            posAction=posState # action is like states
-        #    newState=self.__selectActionGreedy(step,agent,self.network.states.getListStates(),posState)
-            newState=self.__selectActionRandom(self.network.states.getListStates())
-            posActionNewState=self.network.states.getPosState(newState)
-            print ("zzzzzzzzzzzzzzzzzz",posActionNewState,type(posActionNewState))
-            QvalueOld= agent.getQtableValue(step,posState,posActionNewState)
-            reward=agent.getStepScore(step) # score
-            maxval=agent.getMaxVal(step,posState)
-            QvalueNew=round(QvalueOld+self.alpha*(reward+self.gamma*maxval-QvalueOld),3)
-            print ("----------------",QvalueNew,QvalueOld,self.alpha,reward,self.gamma,maxval)
-            agent.setValue(step,posState,posActionNewState,QvalueNew)
-            print (agent.getQtableStep(step))
-            # write on the xml
-            tree=ET.parse(self.config.urlNetworkStatesOut)
-            root=tree.getroot()
-            links=root[1]
-            link=links.findall("./link[@id='"+str(id_link)+"']")[0]
-            steps=link[0]
-            try:                s=steps.findall("./step[@nstep='"+str(step)+"']")[0]
-            except IndexError:  s=ET.SubElement(steps,"step",{"nstep":str(step)})
-            ET.SubElement(s,"value",{"name":"state"}).text=newState
-            tree.write(self.config.urlNetworkStatesOut, pretty_print = True)
-
-    def __computeQtable_old_02(self,step):
-        for agent in self.__agents.getAgents().values():
             id_agent=agent.getId()
-            print (agent.getStates(),agent.getScores())
-            state=agent.getStepState(step-1)
-            statePos=self.network.states.getPosState(state)
-#            action=self.__selectActionGreedy(step-1,agent,self.network.states.getListStates(),statePos)
-            action=self.__selectActionRandom(self.network.states.getListStates())
-            actionPos=self.network.states.getPosState(action)
-            Qvalue=agent.getQtableValue(step-1,statePos,actionPos)
-            reward=agent.getStepScore(step) # score
-            maxval=agent.getMaxVal(step-1,statePos)
-            QvalueNew=Qvalue+self.alpha*(reward+self.gamma*maxval-Qvalue)
-            agent.setValue(step,statePos,actionPos,QvalueNew)
-            agent.setStepState(step,action)
-            print (id_agent,agent.getStates(),agent.getScores(),sep="\n")
-            print("state",state,statePos)
-            print ("action",action,actionPos)
-            agent.displayQtable()
-            # write on the xml
-            tree=ET.parse(self.config.urlNetworkStatesOut)
-            root=tree.getroot()
-            links=root[1]
-            link=links.findall("./link[@id='"+str(id_agent)+"']")[0]
-            steps=link[0]
-            try:                s=steps.findall("./step[@nstep='"+str(step)+"']")[0]
-            except IndexError:  s=ET.SubElement(steps,"step",{"nstep":str(step)})
-            ET.SubElement(s,"value",{"name":"state"}).text=action
-            tree.write(self.config.urlNetworkStatesOut, pretty_print = True)
+            # compute learning
+            state=agent.getStepState(step)
+            new_posState=self.network.states.getPosState(state)
 
-    def __computeQtable (self,step):
-        for agent in self.__agents.getAgents().values():
-            id_agent=agent.getId()
-            state=agent.getStepState(step-1)
-            posState=self.network.states.getPosState(state)
-            action=self.__selectActionGreedy(step-1,agent,self.network.states.getListStates(),posState)
-#            action=self.__selectActionRandom(self.network.states.getListStates())
-            posAction=self.network.states.getPosState(action)
+            old_action=agent.getStepState(step)
+            old_state=agent.getStepState(step-1)
+
+            posState=self.network.states.getPosState(old_state)
+            posAction=self.network.states.getPosState(old_action)
+
             QvalueOld=agent.getQtableValue(step-1,posState,posAction)
-            reward=agent.getStepScore(step-1)
-        #    reward=rd.uniform(0,1)
+            reward=agent.getStepScore(step)                       # TEST    reward=rd.uniform(0,1)
             maxQ=agent.getMaxVal(step-1,posState)
-            QvalueNew=QvalueOld+self.alpha*(reward+self.gamma*maxQ-QvalueOld)
-            # update Qnew
-            agent.setQtableValue(step,posState,posAction,QvalueNew)
-            agent.setStepState(step,action)
+            QvalueNew=round(QvalueOld+self.alpha*(reward+self.gamma*maxQ-QvalueOld),self.config.roundqvalue)
 
-            print ("---------------------------------")
-            print (id_agent,agent.getStates(),agent.getScores())
-            print(state,posState,action,posAction)
-            print('learning',QvalueOld,QvalueNew,reward,maxQ)
-            agent.displayQtable()
+            agent.setQtableValue(step,posState,posAction,QvalueNew)
+            action=self.__selectActionGreedy(step,agent,self.network.states.getListStates(),new_posState) # TEST action=self.__selectActionRandom(self.network.states.getListStates())
+            agent.setStepState(step+1,action)                         # TEST print ("---------------------------------")            print (id_agent,agent.getStates(),agent.getScores())            print(state,posState,action,posAction)            print('learning',QvalueOld,QvalueNew,reward,maxQ)            agent.displayQtable()
 
             # write on the xml
             tree=ET.parse(self.config.urlNetworkStatesOut)
@@ -147,7 +85,6 @@ class Learning ():
             except IndexError:  s=ET.SubElement(steps,"step",{"nstep":str(step)})
             ET.SubElement(s,"value",{"name":"state"}).text=action
             tree.write(self.config.urlNetworkStatesOut, pretty_print = True)
-
 
     def __testRandom(self,step):
         for agent in self.__agents.getAgents().values():
@@ -182,8 +119,7 @@ class Learning ():
 
     def updateAgents(self,step):
         """
-        open the networkstates.xml and
-        for each agent in the agent set, setup the state
+        open the networkstates.xml and for each agent in the agent set, setup the state
         :return:
         """
         tree=ET.parse(self.config.urlNetworkStatesOut)      #print ("--------------------------------",self.config.urlNetworkStatesOut)
@@ -220,7 +156,5 @@ def __test (run):
         l.updateAgents(step)
         l.compute(step)
         """
-
-
 
 __test(False)

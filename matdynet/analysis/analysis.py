@@ -61,8 +61,8 @@ class Analysis:
             except: steps=ET.SubElement(person,"steps")
             s=ET.SubElement(steps,"step",{"nstep":str(step)})
             p = self.__persons.getPerson(id)
-            scores = p.getScore(step)
-            avSc=p.getScore(step)
+            avSc=round(float(p.getScore(step)),self.__config.roundscoreaverage)
+#            print (avSc,type(avSc))
             ET.SubElement(s,"value",{"name":"averagescore"}).text=str(avSc)
             ET.SubElement(s,"value",{"name":"route"}).text=p.getRouteAsString(step)
 
@@ -149,7 +149,7 @@ class Analysis:
                 """
                 oldPathCountVal=int(pathCountTag.text)
                 scoreSum=oldScoreVal+valueScore
-                scoreTag.text=str(scoreSum)
+                scoreTag.text=str(round(scoreSum,self.__config.roundscoresum))
                 pathCountVal=oldPathCountVal+1
                 pathCountTag.text=str(pathCountVal)
 

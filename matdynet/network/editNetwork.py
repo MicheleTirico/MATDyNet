@@ -230,6 +230,7 @@ class EditNetwork (Network):
                                                                 "capacity":line["capacity"],
                                                                 "freespeed":line["freespeed"],
                                                                 "permlanes":line["permlanes"],
+                                                                "modes":line["modes"],
                                                                 "length":link.attrib["length"]})
 
                 self.__setAttribute(sim_link,"state",state)
@@ -249,6 +250,7 @@ class EditNetwork (Network):
                                                                 "capacity":line["capacity"],
                                                                 "freespeed":line["freespeed"],
                                                                 "permlanes":line["permlanes"],
+                                                                "modes":line["modes"],
                                                                 "length":link.attrib["length"]})
 
                 self.__setAttribute(sim_link,"state",self.__initStates)

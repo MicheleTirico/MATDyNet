@@ -39,31 +39,6 @@ class Config:
         self.initConfig()
 
     def initConfig(self):
-
-
-
-        """
-        # url scenarios
-        self.urlNetwork             =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/"+self.getUrl("networksim")
-        self.urlNetwork             =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/"+self.getUrl("network_states")
-        self.urlPlans               =self.__absolutePath+"/"+self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("plans")
-        self.urlStates              =self.__absolutePath+"/"+self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("states")
-        self.urlConfig              =self.__absolutePath+"/"+self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")+"/"+self.getUrl("config_iter")
-
-        # urls sim 0000
-        self.urlNetwork_0000        =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/sim-0000/"+self.getUrl("networksim")
-        self.urlNetworkStates_0000  =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/sim-0000/"+self.getUrl("network_states")
-        self.urlPlans_0000          =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/sim-0000/"+self.getUrl("plans")
-        self.urlStates_0000         =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/sim-0000/"+self.getUrl("states")
-        self.urlConfig_0000         =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/sim-0000/"+self.getUrl("config_iter")
-
-        # url tmp
-        self.urlNetworkTmp          =self.__absolutePath+"/"+self.getUrl("tmp")+"/network_tmp.xml"
-        self.urlPlansTmp            =self.__absolutePath+"/"+self.getUrl("tmp")+"/plans_tmp.xml"
-        self.urlConfigTmp           =self.__absolutePath+"/"+self.getUrl("tmp")+"/config_tmp.xml"
-
-        """
-    # ok
         # urls dir
         self.urlOutput          =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")
         self.urlOutputIter      =self.__absolutePath+"/"+self.getUrl("tmp")+"/output/"
@@ -72,6 +47,12 @@ class Config:
         self.headerNetworkXml="""<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE network SYSTEM "http://www.matsim.org/files/dtd/network_v2.dtd">\n\n"""
         self.nSimMax= int(self.getVal("simulation","parameter","name","numsim"))
         self.randomSeed=self.__getRandomSeed()
+
+        # parameters round
+        self.roundscore=int(self.getVal("analysis","parameter","name","roundscore"))
+        self.roundscoresum=int(self.getVal("analysis","parameter","name","roundscoresum"))
+        self.roundscoreaverage=int(self.getVal("analysis","parameter","name","roundscoreaverage"))
+        self.roundqvalue=int(self.getVal("learning","parameter","name","roundqvalue"))
 
         # url in scenario
         root=self.__absolutePath+"/"+self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")
@@ -198,7 +179,7 @@ class Config:
         root = self.__root.find(root)
         for e in root.iter(tag):
             if e.get(attrib_name) == attrib_val:
-                return e.text
+                return e.text.replace(" ","")
         print ("value not funded. Try",self.getNames(root))
 
     def getAbsolutePath (self):            return self.__absolutePath

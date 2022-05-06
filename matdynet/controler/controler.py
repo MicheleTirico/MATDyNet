@@ -1,9 +1,7 @@
 import os
 
 from matdynet.analysis.analysis import Analysis
-from matdynet.config import config
 from matdynet.learning.learning import Learning
-
 
 class Controler:
 
@@ -109,10 +107,6 @@ def __test (run):
     if run :
         url = "/home/mtirico/project/matdynet/resources/config_sim.xml"
         absPath = "/home/mtirico/project/matdynet/"
-
-
-#        config = Config(url)
-#        controler = Controler(config,network,en)
 __test (False)
 
 
