@@ -1,7 +1,9 @@
 import os
+import shutil
 
 from matdynet.analysis.analysis import Analysis
 from matdynet.learning.learning import Learning
+import lxml.etree as ET
 
 class Controler:
 
@@ -20,10 +22,12 @@ class Controler:
     def __getNameSim (self, step):  return "sim-{:0>4}".format(step)
 
     def __runIterations (self):
-        exit = os.system("java -jar "+ self.__config.getUrl("jar"))
+#        exit=os.system("java -jar "+self.__config.urlJarTmp + " " +self.__config.urlConfigTmp)
+        com = "java -cp "+self.__config.urlJar +" org.eqasim.ile_de_france.RunSimulation --config-path "+self.__config.urlConfigTmp
+        print ("---------------",com) # -Xmx14G
+        exit=os.system(com)
         if exit == 256 :
-            print("jar file not found, try with the absolute path",self.__config.getAbsolutePath())
-            os.system("java -jar "+ self.__config.getUrl("jar"))
+            print("ERROR: jar file not found in ",self.__config.urlJar)
 
     def __pushExitFiles(self, name_sim):
         # create the folder for the sim
@@ -32,11 +36,15 @@ class Controler:
         os.system("touch "+self.__config.getAbsolutePath()+"/"+self.__config.getUrl("tmp")+"/output/"+self.__config.getUrl("scenario")+"_"+name_sim+"_log.md")
         # push outputs in outputs/sims/sim-...
         os.system("cp -r "+self.__config.getAbsolutePath()+"/"+self.__config.getUrl("tmp")+"/output/* "+self.__config.getUrl("url_output")+"/"+self.__config.getUrl("scenario")+"/sims/"+name_sim+"/")
-        # delete all files in output
-    #    os.system("rm -r " +self.__config.getAbsolutePath()+self.__config.getUrl("tmp")+"/output/*")
 
     def __pushFiles(self,pathIn,pathOut):
-        for i in range(len(pathIn)):        os.system("cp "+ pathIn[i]+" "+pathOut[i])
+        for i in range(len(pathIn)):
+            print (pathIn[i], pathOut[i])
+        #    os.system("cp -r "+ pathIn[i]+" "+pathOut[i])
+            shutil.copyfile(pathIn[i],pathOut[i])
+
+    def __pushFolders(self,pathIn,pathOut):
+        for i in range(len(pathIn)):            os.system("cp -r "+ pathIn[i]+" "+pathOut[i])
 
     def __pushIterations (self):            os.system("cp -r "+self.__config.urlOutputIter+" "+self.__config.urlOutputSim+"/")
 
@@ -70,18 +78,59 @@ class Controler:
     def run (self, printAll):
         self.__displayStartSim(printAll)
         self.__config.initConfigStep(0)     # setup files output (first step:files network, networkstates, config, plans, outputplals)
-        self.__pushFiles(pathIn=[self.__config.urlConfig,self.__config.urlPlans],
-                         pathOut=[self.__config.urlConfigTmp,self.__config.urlPlansTmp])
-        self.__pushFiles(pathIn=[self.__config.urlConfig,self.__config.urlPlans,self.__config.urlNetwork],
-                         pathOut=[self.__config.urlConfigOut,self.__config.urlPlansOut,self.__config.urlNetworkOut])
+        pathIn=[
+            self.__config.urlFacilities,           # facilities
+            self.__config.urlHouseholds,           # households
+            self.__config.urlNetwork,           # network
+            self.__config.urlPlans,             # population
+            self.__config.urlTransitSchedule,   # transit_schedule
+            self.__config.urlTransitVehicles,   # transit_vehicles
+            self.__config.urlConfigSim,         # config_sim
+            self.__config.urlConfig,            # conig_iter
+            self.__config.urlStates,            # states
+        ]
+
+        pathOutTmp=[
+            self.__config.urlFacilitiesTmp,           # facilities
+            self.__config.urlHouseholdsTmp,           # households
+            self.__config.urlNetworkTmp,           # network
+            self.__config.urlPlansTmp,             # population
+            self.__config.urlTransitScheduleTmp,   # transit_schedule
+            self.__config.urlTransitVehiclesTmp,   # transit_vehicles
+            self.__config.urlConfigSimTmp,         # config_sim
+            self.__config.urlConfigTmp,            # conig_iter
+            self.__config.urlStatesTmp,            # states
+        ]
+        pathOutOutputs=[
+            self.__config.urlFacilitiesOut,        # facilities
+            self.__config.urlHouseholdsOut,        # households
+            self.__config.urlNetworkOut,           # network
+            self.__config.urlPlansOut,             # population
+            self.__config.urlTransitScheduleOut,   # transit_schedule
+            self.__config.urlTransitVehiclesOut,   # transit_vehicles
+            self.__config.urlConfigSimOut,         # config_sim
+            self.__config.urlConfigOut,            # conig_iter
+            self.__config.urlStatesOut,            # states
+        ]
+        """
+        pathFolderIn=[self.__config.urlJar]
+        pathFolderOutTmp=[self.__config.urlTmp]
+        pathFolderOutOutput=[self.__config.urlJarOut]
+        """
+
+        self.__pushFiles(pathIn=pathIn,pathOut=pathOutTmp)
+        self.__pushFiles(pathIn=pathIn,pathOut=pathOutOutputs)
+
         self.__analysis.initPersonsXml()
         step = 1
         self.__en.editNetwork(0,self.__config.urlNetworkStatesOut,self.__config.urlNetworkTmp)
-        while step <= self.__nMax :
+
+        while step <= self.__nMax:
             self.__n.initMapLinks()
-            self.__displayStartStep (printAll, step)
+            self.__displayStartStep(printAll, step)
             self.__config.initConfigStep(step)
             self.__runIterations()
+            quit()
             self.__pushIterations()
             self.__analysis.updatePersons(step)
             self.__analysis.writePersons(step)
@@ -89,18 +138,29 @@ class Controler:
             self.__learning.updateAgents(step)
             self.__learning.compute(step)
             self.__en.editNetwork(step,self.__config.urlNetworkStatesOut,self.__config.urlNetworkTmp)
+
+            # push the plans.xml file obtained from the previous sim to tmp directory
+            if self.__config.pushPlansFromPreviousSimulation and step>=2:
+                pathIn=self.__config.urlOutputSim+"output/output_plans.xml.gz"
+                pathOut=self.__config.urlOutputSim+"output/output_plans.xml"
+                tree=ET.parse(pathIn)
+                tree.write(pathOut)
+                self.__pushFiles(pathIn=[pathOut],
+                                 pathOut=[self.__config.urlPlansTmp])
+
             self.__pushFiles(pathIn=[self.__config.urlConfigTmp,self.__config.urlNetworkTmp,self.__config.urlPlansTmp],
                              pathOut=[self.__config.urlConfigOut,self.__config.urlNetworkOut,self.__config.urlPlansOut])
 
             self.__displayEndStep(printAll,step)
-            step +=1
+            step+=1
 
+        """
         for agent in self.__learning.getAgents():
             print ("\n-------------------- agent =",agent.getId())
             print ("states",agent.getStates())
             print ("scores",agent.getScores())
             agent.displayQtableStep()
-
+        """
         self.__displayEndSim(printAll)
 
 def __test (run):

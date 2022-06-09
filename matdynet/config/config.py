@@ -42,11 +42,22 @@ class Config:
         # urls dir
         self.urlOutput          =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")
         self.urlOutputIter      =self.__absolutePath+"/"+self.getUrl("tmp")+"/output/"
+        self.urlTmp             =self.__absolutePath+"/"+self.getUrl("tmp")
 
-        # parameters
+        # urls names
+        self.nameNetwork        = self.getUrl("network").replace(".xml.gz","")
+        self.nameNetworkXml     = self.getUrl("network").replace(".gz","")
+
+
+# parameters
         self.headerNetworkXml="""<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE network SYSTEM "http://www.matsim.org/files/dtd/network_v2.dtd">\n\n"""
         self.nSimMax= int(self.getVal("simulation","parameter","name","numsim"))
         self.randomSeed=self.__getRandomSeed()
+        self.pushPlansFromPreviousSimulation=bool(self.getVal("simulation","parameter","name","pushPlansFromPreviousSimulation"))
+
+        self.urlJar             = self.__absolutePath+"/"+self.getUrl("jar")
+
+        #self.__absolutePath+"/"+self.getUrl("tmp")+"/"+self.getUrl("jar")
 
         # parameters round
         self.roundscore=int(self.getVal("analysis","parameter","name","roundscore"))
@@ -57,41 +68,61 @@ class Config:
         # url in scenario
         root=self.__absolutePath+"/"+self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")
         self.urlConfig          =root+"/"+self.getUrl("config_iter")
-        self.urlConfigSim       =root+"/"+self.getUrl("configsim")
+        self.urlConfigSim       =root+"/"+self.getUrl("config_sim")
         self.urlNetwork         =root+"/"+self.getUrl("network")
         self.urlPlans           =root+"/"+self.getUrl("plans")
         self.urlStates          =root+"/"+self.getUrl("states")
-        self.urlJar             =root+"/"+self.getUrl("jar")
         self.urlShp             ='TODO'
         self.urlOutputPlans     =root+"/"+self.getUrl("output_plans")
+        self.urlFacilities      =root+"/"+self.getUrl("facilities")
+        self.urlHouseholds      =root+"/"+self.getUrl("households")
+        self.urlTransitSchedule =root+"/"+self.getUrl("transit_schedule")
+        self.urlTransitVehicles =root+"/"+self.getUrl("transit_vehicles")
 
         # url tmp
         root= self.__absolutePath+"/"+self.getUrl("tmp")
-        self.urlNetworkTmp              =root+"/network_tmp.xml"
-        self.urlPlansTmp                =root+"/plans_tmp.xml"
-        self.urlConfigTmp               =root+"/config_tmp.xml"
+        self.urlFacilitiesTmp           =root+"/"+self.getUrl("facilities")
+        self.urlHouseholdsTmp           =root+"/"+self.getUrl("households")
+        self.urlNetworkTmp              =root+"/"+self.getUrl("network") # "/network_tmp.xml"
+        self.urlPlansTmp                =root+"/"+self.getUrl("plans")#/plans_tmp.xml"
+        self.urlTransitScheduleTmp      =root+"/"+self.getUrl("transit_schedule")
+        self.urlTransitVehiclesTmp      =root+"/"+self.getUrl("transit_vehicles")
+        self.urlConfigSimTmp            =root+"/"+self.getUrl("config_sim")
+        self.urlConfigTmp               =root+"/"+self.getUrl("config_iter") #/config_tmp.xml"
+        self.urlStatesTmp               =root+"/"+self.getUrl("states")
+        self.urlJarTmp                  =root+"/"+self.getUrl("jar")
+        self.urlNetworkXml              =root+"/"+self.nameNetworkXml
+        self.urlNetworkXmlName          =root+"/"+self.nameNetwork
 
         # url output root
         root=self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")
-        self.urlConfigSimOut            =root+"/"+self.getUrl("configsim")
+        self.urlFacilitiesOut              =root+"/"+self.getUrl("facilities")
+        self.urlHouseholdsOut              =root+"/"+self.getUrl("households")
+        self.urlConfigSimOut            =root+"/"+self.getUrl("config_sim")
         self.urlConfigOut               =root+"/"+self.getUrl("network")
-        self.urlStateOut                =root+"/"+self.getUrl("states")
+        self.urlStatesOut                =root+"/"+self.getUrl("states")
         self.urlJarOut                  =root+"/"+self.getUrl("jar")
         self.urlNetworkStatesOut        =root+"/"+self.getUrl("network_states") # to use when you save at the end
-        self.urlShpOut                 ="TODO"
+        self.urlShpOut                  ="TODO"
         self.urlPersonsOut              =root+"/"+self.getUrl("persons")
-
+        
     def __getRandomSeed(self):
-        try:    return int(self.getVal("learning","parameter","name","randomseed"))
-        except TypeError: pass
+        try:
+            return int(self.getVal("learning","parameter","name","randomseed"))
+        except TypeError:
+            pass
 
     def initConfigStep(self,step):
         root= self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/"+self.getNameSim(step)+"/"
+
         # url output sim
-        self.urlConfigOut              =root+self.getUrl("config")
         self.urlNetworkOut             =root+self.getUrl("network")
-        self.urlPlansOut               =root+self.getUrl("plans")
-        self.urlOutputPlansOut         =root+self.getUrl("output_plans")
+        self.urlPlansOut               =root+self.getUrl("plans")#+".gz" #"output/output_plans.xml.gz" #
+        self.urlTransitScheduleOut     =root+self.getUrl("transit_schedule")
+        self.urlTransitVehiclesOut     =root+self.getUrl("transit_vehicles")
+        self.urlConfigOut              =root+self.getUrl("config_iter")
+        #        self.urlOutputPlansOut         =root+self.getUrl("output_plans")
+        #        self.urlPlansOld               =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/sims/"+self.getNameSim(step-1)+"/output/output_plans.xml"
 
         # url dir
         self.urlOutputSim              =root
@@ -171,7 +202,7 @@ class Config:
         """
         root = self.__root.find(root)
         for e in root.iter(tag):
-              if e.get(attrib_name[0]) == attrib_val[0] and e.get(attrib_name[1]) == attrib_val[1]  :
+            if e.get(attrib_name[0]) == attrib_val[0] and e.get(attrib_name[1]) == attrib_val[1]  :
                 return e.text
     def getNames(self,root):    return list(self.getValsUrl().keys())
     def getVal (self, root, tag, attrib_name, attrib_val):
@@ -181,6 +212,8 @@ class Config:
             if e.get(attrib_name) == attrib_val:
                 return e.text.replace(" ","")
         print ("value not funded. Try",self.getNames(root))
+        print (attrib_val,attrib_name)
+        quit()
 
     def getAbsolutePath (self):            return self.__absolutePath
     def getUrl (self,val): return self.getVal("urls","url","name",val).replace(" ","")
@@ -238,7 +271,7 @@ class Urls (Config):
             try :os.mkdir(url)
             except FileExistsError:
                 exit = 1
-                print (url, "no set up output")
+            #    print (url, "no set up output")
         return exit
 
     def createFoldersAbs (self,absolutePath) :
@@ -250,18 +283,22 @@ class Urls (Config):
                 print (url, "no set up output")
         return exit
 
-    def deleteExistingFiles(self):
-        for url in  [self.getUrl("url_output"),self.getUrl("tmp")]:
-            os.system("rm -r "+url)
+    def deleteExistingTmp(self):
+        try:    shutil.rmtree(self.getUrl("tmp"))
+        except FileNotFoundError : pass
+        except OSError: pass
+        #os.system("rm -r "+self.getUrl("tmp")+"/*")
+#        for url in  [self.getUrl("tmp")]:            os.system("rm -r "+url)
 
-    def deleteExistingFilesAbs(self,absolutePath):
-        for url in[absolutePath+"/"+self.getUrl("url_output"),absolutePath+"/"+self.getUrl("tmp")] :
-            os.system("rm -r "+url)
+    def deleteExistingFiles(self):
+        self.deleteExistingTmp()
+        self.deleteExistingOutputs()
 
     def deleteExistingOutputs (self):
-        com= "rm -r " +self.__config.urlOutput+"/"
-        os.system("rm -r " +self.__config.urlOutput+"/")
-        print (com)
+        try:    shutil.rmtree(self.__config.urlOutput)
+        except FileNotFoundError:pass
+        #os.system("rm -r " +self.__config.urlOutput)
+
 # push files
 # ---------------------------------------------------------------------------------------
 

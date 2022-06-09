@@ -7,7 +7,7 @@ class StateSet ():
     # constructor
     # ---------------------------------------------------------------------------------------
     def __init__(self,con):
-        print ("LOG: setup the states")
+        print ("LOG: network/stateSet.py. Init states")
         self.__config = con
         self.__urlStatesXml = self.__config.getAbsolutePath()+"/scenarios/"+self.__config.getUrl("scenario")+"/"+self.__config.getUrl("states")
         self.__tree = ET.parse(self.__urlStatesXml)
@@ -21,7 +21,7 @@ class StateSet ():
             name = s_xml.attrib["name"]
             state = State(name)
             self.__pushStateInBucket(name,state)
-            attrib_line = ["id","modes","from","to","freespeed","capacity","permlanes","dir"]
+            attrib_line = ["modes","freespeed","capacity","permlanes","dir"] # id, from and to are not needed (I think,not sure for shp files)
             for element_state_xml in s_xml:
                 if element_state_xml.tag == "description":
                     state.setDescription(element_state_xml.text)
@@ -40,7 +40,7 @@ class StateSet ():
         line = {}
         for attrib in attrib_list:
             try:    line[attrib] = element.attrib[attrib]
-            except: print ("WARNING: problem with the states.xml flie. The attrib \""+attrib+"\" is not founded in \""+element.tag+"\"")
+            except: print ("WARNING: (network/stateSet.py, cl __getLine) problem with the states.xml file. The attrib \""+attrib+"\" is not founded in \""+element.tag+"\"")
         return line
 
     def __pushStateInBucket(self,name, state):    self.__states[name]=state

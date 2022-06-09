@@ -26,6 +26,7 @@ class Network ():
         self.urlNetwork=self.config.getAbsolutePath()+"/scenarios/"+self.urls.getUrl("scenario")+"/"+self.urls.getUrl("network")
         self.urlNetworkSim=self.config.getAbsolutePath()+"/"+self.urls.getUrl("url_output")+"/"+self.urls.getUrl("scenario")+"/"+self.urls.getUrl("networksim")
         self.urlNetworkToRemove=self.config.getAbsolutePath()+"/"+self.urls.getUrl("tmp")+"/netToRemove.xml"
+    #    self.urlNetworkTmpXml=self.config.getAbsolutePath()+"/"+self.urls.getUrl("tmp")+"/networkXml.xml"
 
         # deprecated
         self.urlXmlStates = self.config.getAbsolutePath()+"/"+self.urls.getUrl("url_output")+"/"+self.urls.getUrl("scenario")+"/"+self.urls.getUrl("network_states")
@@ -34,6 +35,7 @@ class Network ():
         self.states = StateSet(self.config)
         self.__setupNetwork()
 
+    def initStates(self):     self.states = StateSet(self.config)
     # setup
     def __setupNetwork (self):
         try:
@@ -60,26 +62,10 @@ class Network ():
         for link in links_net:
             attributes=link.find("attributes")
             id_link_states=attributes.findall("./attribute[@name='"+"id_link_states"+"']")[0].text
-            self.__mapLinks[int(link.attrib["id"])]=int(id_link_states)
+            self.__mapLinks[int(link.attrib["id"])]=id_link_states
     #    print(self.__mapLinks)
-    #    quit()
+
     def getMap(self):   return self.__mapLinks
 
     def updateMap(self,id_link):
         self.__mapLinks[len(self.__mapLinks)+1]=id_link
-
-
-
-"""
-network: classe generale
-network shp per gestire la transformazione in xml dei files shp
-    da aggiungere : metodi per il setup dei parametri e per il primo cast
-
-network states: contiene gli states e i metodi della gestione delle performances associati ai link
-
-
-network sim: contiene metodi per generare il xml da poi usare nella simulazione 
-
-
-"""
-

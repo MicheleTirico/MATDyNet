@@ -10,7 +10,7 @@ class Analysis:
         self.__config = config
         self.__network=network
         self.__typeAnalysis = self.__config.getValsSimulation()["nameAnalysis"]
-        self.__G=self.__network.G_sim
+    #    self.__G=self.__network.G_sim
         self.__persons = Persons(self.__config.getUrl("scenario"))
     #    self.__urlPersons=self.__config.getAbsolutePath()+"/"+self.__config.getUrl("url_output")+"/"+self.__config.getUrl("scenario")+"/"+self.__config.getUrl("persons")
     #    self.__urlInputPlans=self.__config.getAbsolutePath()+"/scenarios/"+self.__config.getUrl('scenario')+"/"+self.__config.getUrl("plans")
@@ -31,11 +31,15 @@ class Analysis:
         tree_out= ET.ElementTree (root_out)
         tree_in = ET.parse(self.__config.urlPlans)
         root_in = tree_in.getroot()
+        print (self.__config.urlPersonsOut)
         for person_in in root_in:
-            id = person_in.attrib["id"]
-            ET.SubElement(root_out,"person",attrib={"id":id})
-            p = Person(id)
-            self.__persons.addPerson(p)
+            try:        # the exception throw the comments. TODO, to improve it
+                id = person_in.attrib["id"]
+                ET.SubElement(root_out,"person",attrib={"id":id})
+                p = Person(id)
+                self.__persons.addPerson(p)
+            except KeyError:    pass
+
         tree_out.write(self.__config.urlPersonsOut,pretty_print = True)
 
     def initPersonsFromPlans (self):
@@ -69,7 +73,14 @@ class Analysis:
         tree.write(self.__config.urlPersonsOut,pretty_print=True)
 
     def updatePersons (self,step):      # this method update the class persons, not the persons.xml file
-        with gzip.open(self.__getUrlOutputPlans(), 'rb') as f:
+        try: self.__updatePersonsZip(step)
+        except gzip.BadGzipFile: self.__updatePersons(step)
+
+    def __updatePersonsZip(self,step):
+        #with gzip.open(self.__getUrlOutputPlans(), 'rb') as f:
+
+        with gzip.open(self.__config.urlPlansOut, 'rb') as f:
+            print("zip")
             tree = ET.parse(f)
             for person in tree.getroot() :
                 try:
@@ -95,6 +106,34 @@ class Analysis:
                     p.setRoute(step,links)
                     self.__persons.addPerson(p)
                 except KeyError: pass
+
+    def __updatePersons(self,step):
+        tree = ET.parse(self.__config.urlPlansTmp)
+        for person in tree.getroot() :
+            try:
+                id = person.attrib["id"]
+                for plan in person.findall("plan"):
+                    if plan.attrib["selected"] == "yes":
+                        links= []
+                        score=plan.attrib["score"]
+                        mix =[]
+                        for leg in plan.findall('leg'):
+                            route = leg.find("route")
+                            try:                    a=route.text.split(" ")
+                            except AttributeError:  print("WARNING: no route for the agent",id)
+                            mix.append(a)
+                        if len(mix)==0: links = mix
+                        else:
+                            links=mix[0]
+                            for i in range(1,len(mix)):
+                                l = mix[i][1:]
+                                for a in l: links.append(a)
+                p = self.__persons.getPerson(id)
+                p.setScore(step,score)
+                p.setRoute(step,links)
+                self.__persons.addPerson(p)
+            except KeyError: pass
+
 
     def __computeScore(self,step):
         """

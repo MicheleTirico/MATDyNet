@@ -11,12 +11,15 @@ absPath = "/home/mtirico/project/matdynet"
 c = config.Config(url,absPath)
 #c.setAbsolutePath(absPath)
 u = config.Urls(c)
-u.deleteExistingFiles()
+u.deleteExistingTmp()
 u.deleteExistingOutputs()
 u.createFolders()
 
+
 # setup network
 n=Network(c)
+n.initStates()
+
 """ those methods are used when we do not have the initial xml file and we use shp files 
 nshp=EditShp(n,False)       # initialize class
 nshp.processingShp()        # TODO, transformer initial shp to a new shp for the project (stage ? )

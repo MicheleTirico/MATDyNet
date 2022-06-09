@@ -1,13 +1,12 @@
 import os
-import random
 
 import networkx as nx
 import lxml.etree as ET
+import gzip
+import shutil
 
 from matdynet.network.network import Network
-from matdynet.network.stateSet import StateSet
 from matdynet.config import config
-
 
 class EditNetwork (Network):
     # constructor
@@ -30,8 +29,9 @@ class EditNetwork (Network):
         if self.__initStates == "random":
             print ("WARNING: todo, create init random")
         else:
-            print("LOG: create the networkStates.xml with the same state",self.__initStates)
+            print("LOG: (network/editNetwork.py, initNetworkStatesFromXml) start to create the networkStates.xml with the same state",self.__initStates)
             self.__createXmlStatesFromXml()
+            print("LOG: (network/editNetwork.py, initNetworkStatesFromXml) end to create the networkStates.xml")
 
     def createXmlNetworkFromShp (self):
         print ("LOG: create the network.xml file")
@@ -65,15 +65,16 @@ class EditNetwork (Network):
         # open the file network.xml
         states_tree = ET.parse(self.urlNetwork)
         states_root=states_tree.getroot()
-
+        nodes=states_root.find("nodes")
+        links=states_root.find("links")
         # create nodes
-        for node in states_root[0]:
+        for node in nodes:
             ET.SubElement(sim_nodes,"node",attrib=node.attrib)
 
         # create links
         er=0
         w=str(0)
-        for link in states_root[1]: #            print (link)
+        for link in links:
             try: w= link.attrib["width"]
             except: er=1
             l =ET.SubElement(sim_links,"link",attrib={"id":link.attrib["id"],
@@ -211,6 +212,7 @@ class EditNetwork (Network):
         # create links
         sim_id_link=1
         links=states_root.findall("./links")[0]
+#        self.__setAttribute("links",)
         for link in links: #states_root[1]:
             if step==0:
                 state=link.attrib["state"]
@@ -237,26 +239,13 @@ class EditNetwork (Network):
                 self.__setAttribute(sim_link,"width",link.attrib["width"])
                 self.__setAttribute(sim_link,"id_link_states",link.attrib["id"])
                 sim_id_link+=1
-        self.__addHeaderAndStoreXml(root=network,toAdd=self.config.headerNetworkXml,newf=urlNetworkOut,pathTmp=self.urlNetworkToRemove)
 
-    def __addlinkFromStates (self,state_links,sim_links):
-        sim_id_link=1
-        for link in state_links:
-            s=self.states.getState(link.attrib["state"])
-            for line in s.getLines():
-                sim_link=ET.SubElement(sim_links,"link",attrib={"id":str(sim_id_link),#link.attrib["id"],
-                                                                "from":link.attrib["from"],
-                                                                "to": link.attrib["to"],
-                                                                "capacity":line["capacity"],
-                                                                "freespeed":line["freespeed"],
-                                                                "permlanes":line["permlanes"],
-                                                                "modes":line["modes"],
-                                                                "length":link.attrib["length"]})
-
-                self.__setAttribute(sim_link,"state",self.__initStates)
-                self.__setAttribute(sim_link,"width",link.attrib["width"])
-                self.__setAttribute(sim_link,"id_link_states",link.attrib["id"])
-                sim_id_link+=1
+        fileXml=self.config.urlNetworkXml#self.config.urlTmp+"/networkXml.xml"
+        fileXmlGz=self.config.urlNetworkTmp #self.config.urlTmp+"/networkOrsay.xml.gz"
+        self.__addHeaderAndStoreXml(root=network,toAdd=self.config.headerNetworkXml,newf=fileXml,pathTmp=self.urlNetworkToRemove)
+        with open(fileXml, 'rb') as f_in:
+            with gzip.open(fileXmlGz, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
 
     def __addHeaderAndStoreXml (self,root, toAdd,newf,pathTmp):
         tree= ET.ElementTree (root)
