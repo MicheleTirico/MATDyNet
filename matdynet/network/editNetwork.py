@@ -314,19 +314,6 @@ class EditNetwork (Network):
             states_state=ET.SubElement(states_step,"value",{"name":"state"})[0].text
 
 
-    """     
-
-    for link in states_root[1]:
-            name= "name analysis"
-            val= str(random.randrange(0,100)) # value of analysis
-            newState="state"
-            self.__setStepVal(root=link[0],nStep=nStep,nameVal=name,val=val)
-            self.__setStepVal(root=link[0],nStep=nStep,nameVal="state",val=newState)
-
-        tree= ET.ElementTree (states_root)
-        tree.write(self.__config.urlXmlStates)
-    """
-
     # handle and get informations about shapefile
     # ---------------------------------------------------------------------------------------
     def __getLength (self, startnode,endnode, length) : return  round(length [(startnode,endnode)],3)
@@ -336,20 +323,6 @@ class EditNetwork (Network):
         except: return 0
 
 def __test (run):
-    if run :
-        print ("test")
-        # setup parameters
-        url = "/home/mtirico/project/matdynet/scenarios/equil_02/config_sim.xml"
-        absPath = "/home/mtirico/project/matdynet"
-        # config
-        c = config.Config(url)
-        c.setAbsolutePath(absPath)
-        n=Network(c)
-        en = EditNetwork(n)
-        en.addStateToXmlNetwork()
-
-        en.updateStateNetwork(3)
-        en.updateStateNetwork(4)
-        en.updateStateNetwork(3)
+    if run :        print ("test")
 
 __test (False)

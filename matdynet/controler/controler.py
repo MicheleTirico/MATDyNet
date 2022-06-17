@@ -23,8 +23,10 @@ class Controler:
 
     def __runIterations (self):
 #        exit=os.system("java -jar "+self.__config.urlJarTmp + " " +self.__config.urlConfigTmp)
-        com = "java -cp "+self.__config.urlJar +" org.eqasim.ile_de_france.RunSimulation --config-path "+self.__config.urlConfigTmp
-        print ("---------------",com) # -Xmx14G
+    #    com = "java -cp "+self.__config.urlJar +" org.eqasim.ile_de_france.RunSimulation --config-path "+self.__config.urlConfigTmp
+        nameJar=self.__config.nameJar
+        print ("----------------",nameJar)
+        com="java -Xmx14G -cp "+self.__config.nameJar+" org.eqasim.ile_de_france.RunSimulation --config-path "+self.__config.urlConfigTmp #"/media/mtirico/DATA/project/matdynet/.tmp/orsay_config.xml"
         exit=os.system(com)
         if exit == 256 :
             print("ERROR: jar file not found in ",self.__config.urlJar)
@@ -39,9 +41,9 @@ class Controler:
 
     def __pushFiles(self,pathIn,pathOut):
         for i in range(len(pathIn)):
-            print (pathIn[i], pathOut[i])
         #    os.system("cp -r "+ pathIn[i]+" "+pathOut[i])
-            shutil.copyfile(pathIn[i],pathOut[i])
+            try:            shutil.copyfile(pathIn[i],pathOut[i])
+            except FileNotFoundError: print ("WARNING: (controler, pushFiles) file","was not founded:",pathIn[i])
 
     def __pushFolders(self,pathIn,pathOut):
         for i in range(len(pathIn)):            os.system("cp -r "+ pathIn[i]+" "+pathOut[i])
@@ -130,7 +132,6 @@ class Controler:
             self.__displayStartStep(printAll, step)
             self.__config.initConfigStep(step)
             self.__runIterations()
-            quit()
             self.__pushIterations()
             self.__analysis.updatePersons(step)
             self.__analysis.writePersons(step)

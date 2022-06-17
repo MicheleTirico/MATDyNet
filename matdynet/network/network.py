@@ -28,7 +28,7 @@ class Network ():
         self.urlNetworkToRemove=self.config.getAbsolutePath()+"/"+self.urls.getUrl("tmp")+"/netToRemove.xml"
     #    self.urlNetworkTmpXml=self.config.getAbsolutePath()+"/"+self.urls.getUrl("tmp")+"/networkXml.xml"
 
-        # deprecated
+         # deprecated
         self.urlXmlStates = self.config.getAbsolutePath()+"/"+self.urls.getUrl("url_output")+"/"+self.urls.getUrl("scenario")+"/"+self.urls.getUrl("network_states")
 
         # init
@@ -36,6 +36,7 @@ class Network ():
         self.__setupNetwork()
 
     def initStates(self):     self.states = StateSet(self.config)
+
     # setup
     def __setupNetwork (self):
         try:
@@ -56,6 +57,7 @@ class Network ():
     # ---------------------------------------------------------------------------------------
     def initMapLinks(self):
         self.__mapLinks={}
+        print (self.config.urlNetworkTmp)
         tree_net=ET.parse(self.config.urlNetworkTmp)
         root_net=tree_net.getroot()
         links_net=root_net.findall("links")[0]
@@ -63,9 +65,32 @@ class Network ():
             attributes=link.find("attributes")
             id_link_states=attributes.findall("./attribute[@name='"+"id_link_states"+"']")[0].text
             self.__mapLinks[int(link.attrib["id"])]=id_link_states
-    #    print(self.__mapLinks)
 
     def getMap(self):   return self.__mapLinks
+    def updateMap(self,id_link):   self.__mapLinks[len(self.__mapLinks)+1]=id_link
 
-    def updateMap(self,id_link):
-        self.__mapLinks[len(self.__mapLinks)+1]=id_link
+    def setAttribute(self,root,name,val):
+        try:                attributes=root[0]
+        except IndexError:  attributes= ET.SubElement(root,"attributes",{})
+        try:                attribute=attributes.findall("./attribute[@name='"+name+"']")[0]
+        except:             attribute= ET.SubElement(attributes,"attribute",{"name":name,"class":"java.lang.String"})
+        attribute.text=str(val)
+
+    def setAttributeWithAttributes(self,attributes,name,val):
+        try:                attribute=attributes.findall("./attribute[@name='"+name+"']")[0]
+        except:             attribute= ET.SubElement(attributes,"attribute",{"name":name,"class":"java.lang.String"})
+        attribute.text=str(val)
+
+    def addHeaderAndStoreXml (self, root, toAdd,newf,pathTmp):
+        tree= ET.ElementTree (root)
+        tree.write(pathTmp,pretty_print = True)
+        f = open(pathTmp,'r')
+        newf = open(newf,'w')
+        lines = f.readlines()
+        newf.write(toAdd)
+        for line in lines:  newf.write(line)
+        newf.close()
+        f.close()
+        os.remove(self.urlNetworkToRemove)
+
+    def test (self,a):    print (a)

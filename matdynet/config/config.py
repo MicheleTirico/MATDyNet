@@ -47,17 +47,18 @@ class Config:
         # urls names
         self.nameNetwork        = self.getUrl("network").replace(".xml.gz","")
         self.nameNetworkXml     = self.getUrl("network").replace(".gz","")
+        self.namePlans          = self.getUrl("plans").replace(".xml.gz","")
+        self.nameJar            = self.getUrl("jar").replace(" ","")
 
+        # urls Edit
+        self.urlPlansEdit       =self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")+"/"+self.namePlans+"_edit.xml"
 
-# parameters
+        # parameters
         self.headerNetworkXml="""<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE network SYSTEM "http://www.matsim.org/files/dtd/network_v2.dtd">\n\n"""
         self.nSimMax= int(self.getVal("simulation","parameter","name","numsim"))
         self.randomSeed=self.__getRandomSeed()
         self.pushPlansFromPreviousSimulation=bool(self.getVal("simulation","parameter","name","pushPlansFromPreviousSimulation"))
-
-        self.urlJar             = self.__absolutePath+"/"+self.getUrl("jar")
-
-        #self.__absolutePath+"/"+self.getUrl("tmp")+"/"+self.getUrl("jar")
+        self.initStates=self.getVal("simulation","parameter","name","initStates")
 
         # parameters round
         self.roundscore=int(self.getVal("analysis","parameter","name","roundscore"))
@@ -65,10 +66,13 @@ class Config:
         self.roundscoreaverage=int(self.getVal("analysis","parameter","name","roundscoreaverage"))
         self.roundqvalue=int(self.getVal("learning","parameter","name","roundqvalue"))
 
+        # url jar
+        self.urlJar             = self.__absolutePath+"/"+self.getUrl("jar")
+
         # url in scenario
         root=self.__absolutePath+"/"+self.getUrl("url_scenarios")+"/"+self.getUrl("scenario")
         self.urlConfig          =root+"/"+self.getUrl("config_iter")
-        self.urlConfigSim       =root+"/"+self.getUrl("config_sim")
+        self.urlConfigSim       =root+"/"+self.getUrl("configsim")
         self.urlNetwork         =root+"/"+self.getUrl("network")
         self.urlPlans           =root+"/"+self.getUrl("plans")
         self.urlStates          =root+"/"+self.getUrl("states")
@@ -87,7 +91,7 @@ class Config:
         self.urlPlansTmp                =root+"/"+self.getUrl("plans")#/plans_tmp.xml"
         self.urlTransitScheduleTmp      =root+"/"+self.getUrl("transit_schedule")
         self.urlTransitVehiclesTmp      =root+"/"+self.getUrl("transit_vehicles")
-        self.urlConfigSimTmp            =root+"/"+self.getUrl("config_sim")
+        self.urlConfigSimTmp            =root+"/"+self.getUrl("configsim")
         self.urlConfigTmp               =root+"/"+self.getUrl("config_iter") #/config_tmp.xml"
         self.urlStatesTmp               =root+"/"+self.getUrl("states")
         self.urlJarTmp                  =root+"/"+self.getUrl("jar")
@@ -98,13 +102,14 @@ class Config:
         root=self.__absolutePath+"/"+self.getUrl("url_output")+"/"+self.getUrl("scenario")
         self.urlFacilitiesOut              =root+"/"+self.getUrl("facilities")
         self.urlHouseholdsOut              =root+"/"+self.getUrl("households")
-        self.urlConfigSimOut            =root+"/"+self.getUrl("config_sim")
+        self.urlConfigSimOut            =root+"/"+self.getUrl("configsim")
         self.urlConfigOut               =root+"/"+self.getUrl("network")
         self.urlStatesOut                =root+"/"+self.getUrl("states")
         self.urlJarOut                  =root+"/"+self.getUrl("jar")
         self.urlNetworkStatesOut        =root+"/"+self.getUrl("network_states") # to use when you save at the end
         self.urlShpOut                  ="TODO"
         self.urlPersonsOut              =root+"/"+self.getUrl("persons")
+        self.urlMapLinkState               =root+"/"+self.getUrl("maplinkstate")
         
     def __getRandomSeed(self):
         try:
@@ -235,6 +240,7 @@ class Urls (Config):
 
     #  private methods
     # ---------------------------------------------------------------------------------------
+
     def __setListCompletePath (self):
         self.__completeUrls = [self.getUrl("tmp")+"/",
                                self.getUrl("tmp")+"/output",

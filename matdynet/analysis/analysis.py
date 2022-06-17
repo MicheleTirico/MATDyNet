@@ -78,7 +78,7 @@ class Analysis:
 
     def __updatePersonsZip(self,step):
         #with gzip.open(self.__getUrlOutputPlans(), 'rb') as f:
-
+        print (self.__config.urlPersonsOut)
         with gzip.open(self.__config.urlPlansOut, 'rb') as f:
             print("zip")
             tree = ET.parse(f)
